@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Iniciar Dia</title>
+</head>
+<body>
+    <h1>Iniciar Senhas do Dia</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="start_number">Senha Inicial:</label>
+        <input type="number" id="start_number" name="start_number" required>
+        <button type="submit">Iniciar</button>
+    </form>
+</body>
+</html>
