@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 class Clinic(models.Model):
     name = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.name  # Retorna o nome da clínica
+
 class Attendant(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
@@ -14,7 +17,8 @@ class Attendant(models.Model):
 
 class Password(models.Model):
     number = models.IntegerField()
-    counter = models.IntegerField()
+    counter = models.IntegerField(default=1)  # Esta coluna deve ser preenchida
     called = models.BooleanField(default=False)
     time_called = models.DateTimeField(auto_now_add=True)
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
+

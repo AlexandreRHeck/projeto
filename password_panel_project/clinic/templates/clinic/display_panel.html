@@ -25,6 +25,7 @@
             max-width: 900px;
             width: 100%;
             border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         .left-panel, .right-panel {
             flex: 1;
@@ -62,79 +63,51 @@
             font-size: 1.5rem;
             text-align: center;
         }
-        .left-panel h1, .right-panel h1, .senha-number, .guiche-number, .preferencial {
-            text-align: center;
-        }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+        var clinic = "{{ clinic }}"; // Obtém o nome da clínica do contexto do template
 
-    var clinic = "{{ clinic }}"; // Obtém o nome da clínica do contexto do template
-
-    let lastPassword = null;
-
-    function updatePasswordPanel() {
-        let lastPassword = null;
-
-    function updatePasswordPanel() {
-        $.ajax({
-            url: "{% url 'clinic:get_last_password' clinic %}",
-            type: 'GET',
-            success: function(data) {
-                if (data.number && data.number !== lastPassword) {
-                    $('#password_number').text(data.number);
-                    $('#password_counter').text(data.counter);
-                    $('#password_time').text(data.time_called);
-                    lastPassword = data.number;
+        function updatePasswordPanel() {
+            $.ajax({
+                url: "{% url 'clinic:get_last_password' clinic %}",
+                type: 'GET',
+                success: function(data) {
+                    if (data.number) {
+                        $('#password_number').text(data.number);
+                        $('#password_counter').text(data.counter);
+                        $('#password_time').text(data.time_called);
+                        console.log('Painel de senhas atualizado:', data); // Log para verificar dados atualizados
+                    }
+                },
+                error: function() {
+                    console.log('Erro ao carregar a última senha.');
                 }
-            },
-            error: function() {
-                console.log('Erro ao carregar a última senha.');
-            }
-        });
-    }
-
-    $(document).ready(function() {
-        setInterval(updatePasswordPanel, 5000);
-    });
-}
-
-    $.ajax({
-        url: "{% url 'clinic:get_recent_passwords' clinic %}",  // Verifique se o nome da clínica está sendo passado
-        type: 'GET',
-        success: function(data) {
-            var tbody = $('#recent_passwords');
-            tbody.empty();
-            for (var i = 0; i < data.length; i++) {
-                tbody.append(
-                    '<tr>' +
-                    '<td>' + data[i].number + '</td>' +
-                    '<td>' + data[i].counter + '</td>' +
-                    '<td>' + data[i].time_called + '</td>' +
-                    '</tr>'
-                );
-            }
+            });
         }
-    });
-
-// Chame a função de atualização a cada 5 segundos
-$(document).ready(function() {
-    setInterval(updatePasswordPanel, 5000);  // Certifique-se de que o intervalo está correto
-});
-
-
-$(document).ready(function() {
-    setInterval(updatePasswordPanel, 5000);
-});
-
-
-    $(document).ready(function() {
-        // Atualiza o painel a cada 5 segundos
-        setInterval(updatePasswordPanel, 5000);
-    });
 
         $(document).ready(function() {
-            setInterval(updatePasswordPanel, 5000);
+            $('#call_next_password_btn').click(function(e) {
+                e.preventDefault();
+                console.log('Botão de chamar próxima senha clicado.');  // Log de clique no botão
+                $.ajax({
+                    url: "{% url 'clinic:call_next_password' clinic=clinic %}",
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(data) {
+                        console.log('Resposta recebida:', data);  // Log da resposta
+                        // Atualiza o painel após chamar a próxima senha
+                        updatePasswordPanel(); 
+                        $('#chamada-som')[0].play();  // Toca o som
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        console.error('Erro ao chamar a próxima senha:', textStatus, errorThrown);  // Detalhes do erro
+                        alert('Erro ao chamar a próxima senha.');
+                    }
+                });
+            });
         });
     </script>
 </head>
@@ -142,9 +115,9 @@ $(document).ready(function() {
     <div class="panel">
         <div class="left-panel">
             <h1>SENHA</h1>
-            <div class="senha-number">{{ last_password.number }}</div>
+            <div class="senha-number" id="password_number">{{ last_password.number }}</div>
             <h1>GUICHÊ</h1>
-            <div class="guiche-number">{{ last_password.counter }}</div>
+            <div class="guiche-number" id="password_counter">{{ last_password.counter }}</div>
             <div class="preferencial">{{ clinic }}</div>
         </div>
     
@@ -158,7 +131,7 @@ $(document).ready(function() {
                         <th>Hora</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="recent_passwords">
                     {% for password in recent_passwords %}
                     <tr>
                         <td>{{ password.number }}</td>
